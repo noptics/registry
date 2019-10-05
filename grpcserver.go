@@ -4,9 +4,9 @@ import (
 	"context"
 	"net"
 
-	"github.com/sethjback/noptics/golog"
-	"github.com/sethjback/noptics/registry/data"
-	"github.com/sethjback/noptics/registry/registrygrpc"
+	"github.com/noptics/golog"
+	"github.com/noptics/registry/data"
+	"github.com/noptics/registry/registrygrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

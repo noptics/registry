@@ -5,10 +5,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/sethjback/noptics/registry/data"
+	"github.com/noptics/registry/data"
 
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/sethjback/noptics/golog"
+	"github.com/noptics/golog"
 )
 
 func main() {

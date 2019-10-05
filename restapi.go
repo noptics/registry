@@ -12,9 +12,9 @@ import (
 
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/julienschmidt/httprouter"
-	"github.com/sethjback/noptics/golog"
-	"github.com/sethjback/noptics/registry/data"
-	"github.com/sethjback/noptics/registry/registrygrpc"
+	"github.com/noptics/golog"
+	"github.com/noptics/registry/data"
+	"github.com/noptics/registry/registrygrpc"
 )
 
 const usage = `{"message":"path not found","usage":[{"description":"get data about a channel on a cluster","path":"/:cluster/:channel","method":"GET","example":"GET /nats1/payoutRequests","response":{"cluster":"nats1","channel":"payoutRequests","files":[{"name":"request.proto","data":"<base64 encoded file data>"}]}},{"description":"set channel files (raw protobuf files that will be used to decode messages)","path":"/:cluster/:channel","method":"POST","example":"POST /nats1/payoutReqeusts","body":{"cluster":"nats1 (optional)","channel":"payoutRequests (optional)","files":[{"name":"request.proto","data":"<base64 encoded file data>"}]}},{"description":"set channel message (which proto message should be used when decoding)","path":"/:cluster/:channel/message","method":"POST","example":"POST /nats1/payoutReqeusts/message","body":{"name":"request"}}]}`
