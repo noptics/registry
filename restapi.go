@@ -19,6 +19,7 @@ import (
 
 const usage = `{"message":"path not found","usage":[{"description":"get data about a channel on a cluster","path":"/:cluster/:channel","method":"GET","example":"GET /nats1/payoutRequests","response":{"cluster":"nats1","channel":"payoutRequests","files":[{"name":"request.proto","data":"<base64 encoded file data>"}]}},{"description":"set channel files (raw protobuf files that will be used to decode messages)","path":"/:cluster/:channel","method":"POST","example":"POST /nats1/payoutReqeusts","body":{"cluster":"nats1 (optional)","channel":"payoutRequests (optional)","files":[{"name":"request.proto","data":"<base64 encoded file data>"}]}},{"description":"set channel message (which proto message should be used when decoding)","path":"/:cluster/:channel/message","method":"POST","example":"POST /nats1/payoutReqeusts/message","body":{"name":"request"}}]}`
 
+// RESTServer wraps the routes and handlers
 type RESTServer struct {
 	db      data.Store
 	l       golog.Logger
@@ -26,12 +27,14 @@ type RESTServer struct {
 	errChan chan error
 }
 
+// RESTError is the standard structure for rest api errors
 type RESTError struct {
 	Message     string `json:"message"`
 	Description string `json:"description,omitempty"`
 	Details     string `json:"details"`
 }
 
+// RESTChannelData is the standardized reply from the api
 type RESTChannelData struct {
 	Cluster string               `json:"cluster"`
 	Channel string               `json:"channel"`
@@ -65,12 +68,22 @@ func (rs *RESTServer) Stop() error {
 	return rs.hs.Shutdown(ctx)
 }
 
+// SaveFiles takes the POST body and saves the data to the db.Store. Prefernce is given to
+// the channel and cluster parameters provided in the body
 func (rs *RESTServer) SaveFiles(cluster, channel string, body []byte) (int, error) {
 	sfr := &registrygrpc.SaveFilesRequest{}
 	err := jsonpb.Unmarshal(bytes.NewBuffer(body), sfr)
 	if err != nil {
 		es, _ := json.Marshal(&RESTError{Message: "unable to save files", Description: "error parsing POST body", Details: err.Error()})
 		return 400, fmt.Errorf("%s", es)
+	}
+
+	if len(sfr.Channel) == 0 {
+		sfr.Channel = channel
+	}
+
+	if len(sfr.Cluster) == 0 {
+		sfr.Cluster = cluster
 	}
 
 	err = rs.db.SaveFiles(sfr.GetCluster(), sfr.GetChannel(), sfr.GetFiles())
@@ -82,6 +95,7 @@ func (rs *RESTServer) SaveFiles(cluster, channel string, body []byte) (int, erro
 	return 200, nil
 }
 
+// GetChannel returns the saved channel data
 func (rs *RESTServer) GetChannel(cluster, channel string) (string, *registrygrpc.SaveFilesRequest, int, error) {
 	message, fs, err := rs.db.GetChannelData(cluster, channel)
 	if err != nil {
@@ -96,6 +110,7 @@ func (rs *RESTServer) GetChannel(cluster, channel string) (string, *registrygrpc
 	return message, &registrygrpc.SaveFilesRequest{Cluster: cluster, Channel: channel, Files: fs}, 200, nil
 }
 
+// SetMessage sets the root message that will be sent over a channel.
 func (rs *RESTServer) SetMessage(cluster, channel string, bdy []byte) (int, error) {
 	BodyData := map[string]string{}
 	err := json.Unmarshal(bdy, &BodyData)
@@ -150,7 +165,7 @@ func (rs *RESTServer) wrapRoute(w http.ResponseWriter, r *http.Request, ps httpr
 
 		bdy, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			writeReply(400, []byte(fmt.Sprintf(`{"message": "error reading post body", "details": "%s"}`, err.Error)), w)
+			writeReply(400, []byte(fmt.Sprintf(`{"message": "error reading post body", "details": "%s"}`, err.Error())), w)
 			return
 		}
 
