@@ -2,7 +2,15 @@
 
 
 [[projects]]
-  digest = "1:b00e623b170d5636556b86316673decafbf0ee8e05dc1e1621435ed9ed2aaa6f"
+  digest = "1:9f3b30d9f8e0d7040f729b82dcbc8f0dead820a133b3147ce355fc451f32d761"
+  name = "github.com/BurntSushi/toml"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3012a1dbe2e4bd1391d42b32f0577cb7bbc7f005"
+  version = "v0.3.1"
+
+[[projects]]
+  digest = "1:c3de01e26485e786f56c409b8a2a1d15d23dba550c65f309906d663d6a50c7d0"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -44,11 +52,11 @@
     "service/sts/stsiface",
   ]
   pruneopts = "UT"
-  revision = "472ba41213bd699ff50a642b60afd89181d7bb9b"
-  version = "v1.25.6"
+  revision = "0cdb9f5617b12782c925df2fc10c00765ae0f4a4"
+  version = "v1.25.26"
 
 [[projects]]
-  digest = "1:da222e621ecbb9f2ba5d8fb2b928849edae56eeb6903ba02d6e6a16c58758030"
+  digest = "1:0fe554008c5cb338bb4193d9f3ef82152cea68280d79a6fce677460b855ecfe3"
   name = "github.com/gogo/protobuf"
   packages = [
     "jsonpb",
@@ -57,8 +65,8 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "0ca988a254f991240804bf9821f3450d87ccbb1b"
-  version = "v1.3.0"
+  revision = "5628607bb4c51c3157aacc3a50f0ab707582b805"
+  version = "v1.3.1"
 
 [[projects]]
   digest = "1:f5ce1529abc1204444ec73779f44f94e2fa8fcdb7aca3c355b0c95947e4005c6"
@@ -91,30 +99,38 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1cae373e5ea1c419398136c2f235f6338feec17a2c5ba0cbee01fbd715b55f13"
+  digest = "1:1a673405d9321b99c28ff357e3f0ea3aa9a71d49f3bd7a433b276aabea423af0"
   name = "github.com/noptics/golog"
   packages = ["."]
   pruneopts = "UT"
-  revision = "dc38f8237d881a31e50323dae3d2add247d52a74"
+  revision = "b74e9c8c4f9dbd143659cd9c8bd6bbe35aad9ecd"
 
 [[projects]]
-  digest = "1:777e729b475d3895c7229552aa10076f0d177daf37c0a72258006d046d329960"
+  digest = "1:0bdcb0c740d79d400bd3f7946ac22a715c94db62b20bfd2e01cd50693aba0600"
   name = "go.uber.org/atomic"
   packages = ["."]
   pruneopts = "UT"
-  revision = "4e336646b2ef9fc6e47be8e21594178f98e5ebcf"
-  version = "v1.2.0"
+  revision = "9dc4df04d0d1c39369750a9f6c32c39560672089"
+  version = "v1.5.0"
 
 [[projects]]
-  digest = "1:60bf2a5e347af463c42ed31a493d817f8a72f102543060ed992754e689805d1a"
+  digest = "1:e6d88834deb4e35eb998c74f4d042db6ccecaaf62c0f6d57905852800994af00"
   name = "go.uber.org/multierr"
   packages = ["."]
   pruneopts = "UT"
-  revision = "3c4937480c32f4c13a875a1829af76c98ca3d40a"
-  version = "v1.1.0"
+  revision = "824d08f79702fe5f54aca8400aa0d754318786e7"
+  version = "v1.4.0"
 
 [[projects]]
-  digest = "1:676160e6a4722b08e0e26b11521d575c2cb2b6f0c679e1ee6178c5d8dee51e5e"
+  branch = "master"
+  digest = "1:3032e90a153750ea149f68bf081f97ca738f041fba45c41c80737f572ffdf2f4"
+  name = "go.uber.org/tools"
+  packages = ["update-license"]
+  pruneopts = "UT"
+  revision = "2cfd321de3ee5d5f8a5fda2521d1703478334d98"
+
+[[projects]]
+  digest = "1:6be13632ab4bd5842a097abb3aabac045a8601e19a10da4239e7d8bd83d4b83c"
   name = "go.uber.org/zap"
   packages = [
     ".",
@@ -125,12 +141,23 @@
     "zapcore",
   ]
   pruneopts = "UT"
-  revision = "27376062155ad36be76b0f12cf1572a221d3a48c"
-  version = "v1.10.0"
+  revision = "a6015e13fab9b744d96085308ce4e8f11bad1996"
+  version = "v1.12.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:484c8bf6b3155a318ef96834afd9777b05a64fb6585ffadbfa12cac91ad9e618"
+  digest = "1:21d7bad9b7da270fd2d50aba8971a041bd691165c95096a2a4c68db823cbc86a"
+  name = "golang.org/x/lint"
+  packages = [
+    ".",
+    "golint",
+  ]
+  pruneopts = "UT"
+  revision = "16217165b5de779cb6a5e4fc81fa9c1166fda457"
+
+[[projects]]
+  branch = "master"
+  digest = "1:eaa0ecf4402dc6dd4c6f08100a8463e4ab3117eff9c6453018195977977fa5c1"
   name = "golang.org/x/net"
   packages = [
     "http/httpguts",
@@ -141,15 +168,15 @@
     "trace",
   ]
   pruneopts = "UT"
-  revision = "d98b1b4438230571bd7fbc5aaa89843e92937bd3"
+  revision = "a882066a44e04a21d46e51451c71e131344e830e"
 
 [[projects]]
   branch = "master"
-  digest = "1:84ed4fd3f7c52941feec4832e385f61377a01b4c98a0f868f16f10c2469fc0fe"
+  digest = "1:824b4d14e35e35e821d3127319e51eb838f72434100750ad395db96d00b5a871"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "c178f38b412c7b426e4e97be2e75d11ff7b8d4d4"
+  revision = "ac3223d8017937d8cd94de35a801ea2459f6d5a0"
 
 [[projects]]
   digest = "1:8d8faad6b12a3a4c819a3f9618cb6ee1fa1cfc33253abeeea8b55336721e3405"
@@ -178,11 +205,35 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:24bdfa6b59167b319425261689ebde2f9d15d13680341833ada3551a3da99fb2"
+  name = "golang.org/x/tools"
+  packages = [
+    "go/analysis",
+    "go/analysis/passes/inspect",
+    "go/ast/astutil",
+    "go/ast/inspector",
+    "go/buildutil",
+    "go/gcexportdata",
+    "go/internal/gcimporter",
+    "go/internal/packagesdriver",
+    "go/packages",
+    "go/types/objectpath",
+    "go/types/typeutil",
+    "internal/fastwalk",
+    "internal/gopathwalk",
+    "internal/semver",
+    "internal/span",
+  ]
+  pruneopts = "UT"
+  revision = "dc038396d1f0c0a0a161c594201b868c8d35c8fe"
+
+[[projects]]
+  branch = "master"
   digest = "1:583a0c80f5e3a9343d33aea4aead1e1afcc0043db66fdf961ddd1fe8cd3a4faf"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "UT"
-  revision = "c459b9ce5143dd819763d9329ff92a8e35e61bd9"
+  revision = "919d9bdd9fe6f1a5dd95ce5d5e4cdb8fd3c516d0"
 
 [[projects]]
   digest = "1:6cd77d0b616d2dcebd363dfecba593f27b0151fc82cdb5fbfb96c5a7cfbc95b5"
@@ -225,6 +276,40 @@
   pruneopts = "UT"
   revision = "f6d0f9ee430895e87ef1ceb5ac8f39725bafceef"
   version = "v1.24.0"
+
+[[projects]]
+  digest = "1:131158a88aad1f94854d0aa21a64af2802d0a470fb0f01cb33c04fafd2047111"
+  name = "honnef.co/go/tools"
+  packages = [
+    "arg",
+    "cmd/staticcheck",
+    "config",
+    "deprecated",
+    "facts",
+    "functions",
+    "go/types/typeutil",
+    "internal/cache",
+    "internal/passes/buildssa",
+    "internal/renameio",
+    "internal/sharedcheck",
+    "lint",
+    "lint/lintdsl",
+    "lint/lintutil",
+    "lint/lintutil/format",
+    "loader",
+    "printf",
+    "simple",
+    "ssa",
+    "ssautil",
+    "staticcheck",
+    "staticcheck/vrp",
+    "stylecheck",
+    "unused",
+    "version",
+  ]
+  pruneopts = "UT"
+  revision = "afd67930eec2a9ed3e9b19f684d17a062285f16a"
+  version = "2019.2.3"
 
 [solve-meta]
   analyzer-name = "dep"

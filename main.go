@@ -22,6 +22,8 @@ func main() {
 	l.Init()
 	defer l.Finish()
 
+	c := newContext()
+
 	// Setup the Database Connection
 	dbendpoint := os.Getenv("DB_ENDPOINT")
 	sess, err := session.NewSession()
@@ -39,26 +41,29 @@ func main() {
 	dataStore := data.NewDynamodb(sess, dbendpoint, tablePrefix, l)
 
 	// Start the GRPC Server
-	grpcport := os.Getenv("GRPC_PORT")
-	if grpcport == "" {
-		grpcport = "7775"
+	c.GRPCPort = os.Getenv("GRPC_PORT")
+	if c.GRPCPort == "" {
+		c.GRPCPort = "7775"
 	}
 
 	errChan := make(chan error)
 
-	gs, err := NewGRPCServer(dataStore, grpcport, errChan, l)
+	gs, err := NewGRPCServer(dataStore, c.GRPCPort, errChan, l)
 	if err != nil {
 		l.Infow("unable to start grpc server", "error", err.Error())
 		os.Exit(1)
 	}
 
 	// start the rest server
-	rsport := os.Getenv("REST_PORT")
-	if rsport == "" {
-		rsport = "7776"
+	c.RESTPort = os.Getenv("REST_PORT")
+	if c.RESTPort == "" {
+		c.RESTPort = "7776"
 	}
 
-	rs := NewRestServer(dataStore, rsport, errChan, l)
+	// We don't support specific address binding right now...
+	c.Host = "0.0.0.0"
+
+	rs := NewRestServer(dataStore, c.RESTPort, errChan, l, c)
 
 	l.Info("started")
 

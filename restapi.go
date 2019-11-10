@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/jsonpb"
@@ -24,6 +23,7 @@ type RESTServer struct {
 	db      data.Store
 	l       golog.Logger
 	hs      http.Server
+	context *Context
 	errChan chan error
 }
 
@@ -42,11 +42,37 @@ type RESTChannelData struct {
 	Files   []*registrygrpc.File `json:"files"`
 }
 
-func NewRestServer(db data.Store, port string, errChan chan error, l golog.Logger) *RESTServer {
+type RESTStatusData struct {
+	Context
+}
+
+type RouteReply struct {
+	Code        int
+	Error       *RESTError
+	ChannelData *RESTChannelData
+	StatusData  *RESTStatusData
+	Channels    []string
+}
+
+type RouteHandler func(*http.Request, httprouter.Params) *RouteReply
+
+func newReplyError(message, description, details string, status int) *RouteReply {
+	return &RouteReply{
+		Code: status,
+		Error: &RESTError{
+			Message:     message,
+			Description: description,
+			Details:     details,
+		},
+	}
+}
+
+func NewRestServer(db data.Store, port string, errChan chan error, l golog.Logger, context *Context) *RESTServer {
 	rs := &RESTServer{
 		db:      db,
 		l:       l,
 		errChan: errChan,
+		context: context,
 	}
 
 	rs.hs = http.Server{Addr: ":" + port, Handler: rs.Router()}
@@ -68,125 +94,157 @@ func (rs *RESTServer) Stop() error {
 	return rs.hs.Shutdown(ctx)
 }
 
+func (rs *RESTServer) Status(r *http.Request, ps httprouter.Params) *RouteReply {
+	return &RouteReply{Code: 200, StatusData: &RESTStatusData{*rs.context}}
+}
+
 // SaveFiles takes the POST body and saves the data to the db.Store. Prefernce is given to
 // the channel and cluster parameters provided in the body
-func (rs *RESTServer) SaveFiles(cluster, channel string, body []byte) (int, error) {
-	sfr := &registrygrpc.SaveFilesRequest{}
-	err := jsonpb.Unmarshal(bytes.NewBuffer(body), sfr)
+// the router params expected are :channel and :cluster
+func (rs *RESTServer) SaveFiles(r *http.Request, ps httprouter.Params) *RouteReply {
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		es, _ := json.Marshal(&RESTError{Message: "unable to save files", Description: "error parsing POST body", Details: err.Error()})
-		return 400, fmt.Errorf("%s", es)
+		return newReplyError("request error", "unble to read POST body", err.Error(), 500)
+	}
+
+	sfr := &registrygrpc.SaveFilesRequest{}
+	err = jsonpb.Unmarshal(bytes.NewBuffer(body), sfr)
+	if err != nil {
+		return newReplyError("unable to save files", "error parsing POST body", err.Error(), 400)
 	}
 
 	if len(sfr.Channel) == 0 {
-		sfr.Channel = channel
+		sfr.Channel = ps.ByName("channel")
 	}
 
 	if len(sfr.Cluster) == 0 {
-		sfr.Cluster = cluster
+		sfr.Cluster = ps.ByName("cluster")
+	}
+
+	if len(sfr.Cluster) == 0 || len(sfr.Channel) == 0 {
+		return newReplyError("unable to save files", "invalid parameters provided", "must provide channel and cluster", 400)
 	}
 
 	err = rs.db.SaveFiles(sfr.GetCluster(), sfr.GetChannel(), sfr.GetFiles())
 	if err != nil {
-		es, _ := json.Marshal(&RESTError{Message: "unable to save files", Description: "error storing data", Details: err.Error()})
-		return 400, fmt.Errorf("%s", es)
+		return newReplyError("unable to save files", "error storing data", err.Error(), 400)
 	}
 
-	return 200, nil
+	return &RouteReply{Code: 200}
 }
 
 // GetChannel returns the saved channel data
-func (rs *RESTServer) GetChannel(cluster, channel string) (string, *registrygrpc.SaveFilesRequest, int, error) {
+func (rs *RESTServer) GetChannel(r *http.Request, ps httprouter.Params) *RouteReply {
+	channel := ps.ByName("channel")
+	cluster := ps.ByName("cluster")
+
 	message, fs, err := rs.db.GetChannelData(cluster, channel)
 	if err != nil {
-		es, _ := json.Marshal(&RESTError{Message: "unable to get file", Details: err.Error()})
-		return "", nil, 400, fmt.Errorf("%s", es)
+		return newReplyError("request error", "trouble reading channel data from store", err.Error(), 500)
 	}
 
 	if fs == nil {
-		return "", nil, 404, nil
+		return &RouteReply{Code: 404}
 	}
 
-	return message, &registrygrpc.SaveFilesRequest{Cluster: cluster, Channel: channel, Files: fs}, 200, nil
+	return &RouteReply{
+		Code: 200,
+		ChannelData: &RESTChannelData{
+			Message: message,
+			Channel: channel,
+			Cluster: cluster,
+			Files:   fs,
+		},
+	}
+}
+
+func (rs *RESTServer) GetChannels(r *http.Request, ps httprouter.Params) *RouteReply {
+	cluster := ps.ByName("cluster")
+
+	channels, err := rs.db.GetChannels(cluster)
+	if err != nil {
+		return newReplyError("unable to get channel list", "trouble reading channel data from store", err.Error(), 500)
+	}
+
+	return &RouteReply{Code: 200, Channels: channels}
 }
 
 // SetMessage sets the root message that will be sent over a channel.
-func (rs *RESTServer) SetMessage(cluster, channel string, bdy []byte) (int, error) {
-	BodyData := map[string]string{}
-	err := json.Unmarshal(bdy, &BodyData)
+func (rs *RESTServer) SetMessage(r *http.Request, ps httprouter.Params) *RouteReply {
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		es, _ := json.Marshal(&RESTError{Message: "unable to set channel message", Description: "error parsing POST body", Details: err.Error()})
-		return 400, fmt.Errorf("%s", es)
+		return newReplyError("request error", "unble to read POST body", err.Error(), 500)
+	}
+
+	BodyData := map[string]string{}
+	err = json.Unmarshal(body, &BodyData)
+	if err != nil {
+		return newReplyError("unable to set channel message", "error parsing POST body", err.Error(), 400)
 	}
 
 	msg, ok := BodyData["message"]
 	if !ok {
-		es, _ := json.Marshal(&RESTError{Message: "unable to set channel message", Description: "must provide 'message' field in body"})
-		return 400, fmt.Errorf("%s", es)
+		return newReplyError("unable to set channel message", "must provide 'message' field in body", "", 400)
 	}
+
+	channel := ps.ByName("channel")
+	cluster := ps.ByName("cluster")
 
 	err = rs.db.SetChannelMessage(cluster, channel, msg)
 	if err != nil {
-		es, _ := json.Marshal(&RESTError{Message: "unable to set message for channel", Details: err.Error()})
-		return 400, fmt.Errorf("%s", es)
+		return newReplyError("unable to set channel message", "data store error", err.Error(), 400)
 	}
 
-	return 200, nil
+	return &RouteReply{Code: 200}
 }
 
-func (rs *RESTServer) wrapRoute(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	if r.Method == "GET" {
-		message, files, status, err := rs.GetChannel(ps.ByName("cluster"), ps.ByName("channel"))
+func wrapRoute(rh RouteHandler) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		response := rh(r, ps)
+
+		setHeaders(w, r.Header)
 		var body []byte
-		if err != nil {
-			body = []byte(err.Error())
-		} else {
-			if len(message) == 0 && files == nil {
-				status = 404
-			} else {
-				rcd := RESTChannelData{
-					Message: message,
-					Channel: ps.ByName("channel"),
-					Cluster: ps.ByName("cluster"),
-				}
-
-				if files != nil {
-					rcd.Files = files.Files
-				}
-				body, _ = json.Marshal(rcd)
-			}
+		var err error
+		if response.Error != nil {
+			body, err = json.Marshal(response.Error)
+		} else if response.ChannelData != nil {
+			body, err = json.Marshal(response.ChannelData)
+		} else if response.Channels != nil {
+			body, err = json.Marshal(response.Channels)
+		} else if response.StatusData != nil {
+			body, err = json.Marshal(response.StatusData)
 		}
 
-		writeReply(status, body, w)
+		if err != nil {
+			body = []byte(fmt.Sprintf(`{"message": "error marshalling response", "description":"unable to json encode data", "details":"%s"`, err.Error()))
+			response.Code = 500
+		}
+
+		w.WriteHeader(response.Code)
+		if len(body) != 0 {
+			w.Write(body)
+		}
 	}
+}
 
-	if r.Method == "POST" {
-		pathString := strings.Split(r.URL.Path, "/")[1:]
+func setHeaders(w http.ResponseWriter, rh http.Header) {
+	allowMethod := "GET, POST, PUT, DELETE, OPTIONS"
+	allowHeaders := "Content-Type"
+	w.Header().Set("Cache-Control", "must-revalidate")
+	w.Header().Set("Allow", allowMethod)
+	w.Header().Set("Access-Control-Allow-Methods", allowMethod)
+	w.Header().Set("Access-Control-Allow-Headers", allowHeaders)
 
-		bdy, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			writeReply(400, []byte(fmt.Sprintf(`{"message": "error reading post body", "details": "%s"}`, err.Error())), w)
-			return
-		}
-
-		var status int
-		if pathString[2] == "files" {
-			status, err = rs.SaveFiles(pathString[0], pathString[1], bdy)
-		} else {
-			status, err = rs.SetMessage(pathString[0], pathString[1], bdy)
-		}
-
-		var body []byte
-		if err != nil {
-			body = []byte(err.Error())
-		}
-		writeReply(status, body, w)
+	o := rh.Get("Origin")
+	if o == "" {
+		o = "*"
 	}
-
+	w.Header().Set("Access-Control-Allow-Origin", o)
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Content-Type", "application/json")
 }
 
 func writeReply(status int, body []byte, w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if len(body) != 0 {
 		w.Write(body)
@@ -195,9 +253,11 @@ func writeReply(status int, body []byte, w http.ResponseWriter) {
 
 func (rs *RESTServer) Router() *httprouter.Router {
 	r := httprouter.New()
-	r.POST("/:cluster/:channel/files", rs.wrapRoute)
-	r.POST("/:cluster/:channel/message", rs.wrapRoute)
-	r.GET("/:cluster/:channel", rs.wrapRoute)
+	r.POST("/:cluster/:channel/files", wrapRoute(rs.SaveFiles))
+	r.POST("/:cluster/:channel/message", wrapRoute(rs.SetMessage))
+	r.GET("/:cluster/:channel", wrapRoute(rs.GetChannel))
+	r.GET("/:cluster", wrapRoute(rs.GetChannels))
+	r.GET("/", wrapRoute(rs.Status))
 
 	r.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
