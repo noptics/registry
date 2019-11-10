@@ -155,3 +155,36 @@ func (db *dynamo) SetChannelMessage(cluster, channel, message string) error {
 
 	return err
 }
+
+func (db *dynamo) GetChannels(cluster string) ([]string, error) {
+	keyExp := expression.Key(db.config["field_cluster"]).Equal(expression.Value(cluster))
+	proj := expression.NamesList(expression.Name(db.config["field_channel"]))
+
+	exp, err := expression.NewBuilder().WithKeyCondition(keyExp).WithProjection(proj).Build()
+	if err != nil {
+		return nil, err
+	}
+
+	client := dbClient(db)
+	resp, err := client.Query(&dynamodb.QueryInput{
+		ExpressionAttributeValues: exp.Values(),
+		ExpressionAttributeNames:  exp.Names(),
+		KeyConditionExpression:    exp.KeyCondition(),
+		ProjectionExpression:      exp.Projection(),
+		TableName:                 aws.String(db.tablePrefix + db.config["table"]),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	chans := []string{}
+
+	db.l.Debugw("query items", "cluster", cluster, "items", resp.Items)
+
+	for _, i := range resp.Items {
+		chans = append(chans, *i["channel"].S)
+	}
+
+	return chans, nil
+}
