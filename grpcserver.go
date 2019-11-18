@@ -84,3 +84,23 @@ func (s *GRPCServer) GetMessage(ctx context.Context, in *registrygrpc.GetMessage
 
 	return &registrygrpc.GetMessageReply{Name: m}, nil
 }
+
+func (s *GRPCServer) GetChannelData(ctx context.Context, in *registrygrpc.GetChannelDataRequest) (*registrygrpc.GetChannelDataReply, error) {
+	m, files, err := s.db.GetChannelData(in.Cluster, in.Channel)
+
+	if err != nil {
+		return nil, status.Error(codes.Unknown, err.Error())
+	}
+
+	return &registrygrpc.GetChannelDataReply{Cluster: in.Cluster, Channel: in.Channel, Files: files, Message: m}, nil
+}
+
+func (s *GRPCServer) SetChannelData(ctx context.Context, in *registrygrpc.SetChannelDataRequest) (*registrygrpc.SetChannelDataReply, error) {
+	err := s.db.SaveChannelData(in.Cluster, in.Channel, in.Message, in.Files)
+
+	if err != nil {
+		return nil, status.Error(codes.Unknown, err.Error())
+	}
+
+	return &registrygrpc.SetChannelDataReply{}, nil
+}

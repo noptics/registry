@@ -198,6 +198,31 @@ func (rs *RESTServer) SetMessage(r *http.Request, ps httprouter.Params) *RouteRe
 	return &RouteReply{Code: 200}
 }
 
+func (rs *RESTServer) SetChannelData(r *http.Request, ps httprouter.Params) *RouteReply {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return newReplyError("request error", "unble to read POST body", err.Error(), 500)
+	}
+
+	type SetChannelData struct {
+		Message string               `json:"message"`
+		Files   []*registrygrpc.File `json:"files"`
+	}
+
+	BodyData := &SetChannelData{}
+	err = json.Unmarshal(body, &BodyData)
+	if err != nil {
+		return newReplyError("unable to set channel data", "error parsing POST body", err.Error(), 400)
+	}
+
+	err = rs.db.SaveChannelData(ps.ByName("cluster"), ps.ByName("channel"), BodyData.Message, BodyData.Files)
+	if err != nil {
+		return newReplyError("unable to set channel message", "data store error", err.Error(), 400)
+	}
+
+	return &RouteReply{Code: 200}
+}
+
 func wrapRoute(rh RouteHandler) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		response := rh(r, ps)
@@ -253,9 +278,17 @@ func writeReply(status int, body []byte, w http.ResponseWriter) {
 
 func (rs *RESTServer) Router() *httprouter.Router {
 	r := httprouter.New()
+
+	r.HandleOPTIONS = true
+	r.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		setHeaders(w, r.Header)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
 	r.POST("/:cluster/:channel/files", wrapRoute(rs.SaveFiles))
 	r.POST("/:cluster/:channel/message", wrapRoute(rs.SetMessage))
 	r.GET("/:cluster/:channel", wrapRoute(rs.GetChannel))
+	r.POST("/:cluster/:channel", wrapRoute(rs.SetChannelData))
 	r.GET("/:cluster", wrapRoute(rs.GetChannels))
 	r.GET("/", wrapRoute(rs.Status))
 
