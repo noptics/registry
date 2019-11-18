@@ -12,6 +12,8 @@ type Store interface {
 	SetChannelMessage(cluster, channel, message string) error
 	// GetChannelData returns the root message and and proto files for the channel
 	GetChannelData(cluster, channel string) (string, []*registrygrpc.File, error)
+	// SaveChannelData sets (overwrites) all the relevant data for a channel
+	SaveChannelData(cluster, channel, message string, files []*registrygrpc.File) error
 	// GetChannels returns a list of channels the registry has data for
 	GetChannels(cluster string) ([]string, error)
 }

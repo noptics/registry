@@ -188,3 +188,39 @@ func (db *dynamo) GetChannels(cluster string) ([]string, error) {
 
 	return chans, nil
 }
+
+func (db *dynamo) SaveChannelData(cluster, channel, message string, files []*registrygrpc.File) error {
+	update := expression.Set(
+		expression.Name(db.config["field_message"]),
+		expression.Value(message),
+	).Set(
+		expression.Name(db.config["field_files"]),
+		expression.Value(files),
+	)
+
+	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+	if err != nil {
+		return err
+	}
+
+	input := &dynamodb.UpdateItemInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		Key: map[string]*dynamodb.AttributeValue{
+			db.config["field_cluster"]: {
+				S: aws.String(cluster),
+			},
+			db.config["field_channel"]: {
+				S: aws.String(channel),
+			},
+		},
+		TableName:        aws.String(db.tablePrefix + db.config["table"]),
+		UpdateExpression: expr.Update(),
+	}
+
+	db.l.Debugw("set channel data", "channel", channel, "cluster", cluster, "message", message, "files", files, "input", input)
+
+	_, err = dbClient(db).UpdateItem(input)
+
+	return err
+}
