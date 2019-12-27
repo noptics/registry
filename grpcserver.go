@@ -104,3 +104,33 @@ func (s *GRPCServer) SetChannelData(ctx context.Context, in *registrygrpc.SetCha
 
 	return &registrygrpc.SetChannelDataReply{}, nil
 }
+
+func (s *GRPCServer) SaveCluster(ctx context.Context, in *registrygrpc.SaveClusterRequest) (*registrygrpc.SaveClusterReply, error) {
+	id, err := s.db.SaveCluster(in.Cluster)
+
+	if err != nil {
+		return nil, status.Error(codes.Unknown, err.Error())
+	}
+
+	return &registrygrpc.SaveClusterReply{Id: id}, nil
+}
+
+func (s *GRPCServer) GetCluster(ctx context.Context, in *registrygrpc.GetClusterRequest) (*registrygrpc.GetClusterReply, error) {
+	cluster, err := s.db.GetCluster(in.Id)
+
+	if err != nil {
+		return nil, status.Error(codes.Unknown, err.Error())
+	}
+
+	return &registrygrpc.GetClusterReply{Cluster: cluster}, nil
+}
+
+func (s *GRPCServer) GetClusters(ctx context.Context, in *registrygrpc.GetClustersRequest) (*registrygrpc.GetClustersReply, error) {
+	clusters, err := s.db.GetClusters()
+
+	if err != nil {
+		return nil, status.Error(codes.Unknown, err.Error())
+	}
+
+	return &registrygrpc.GetClustersReply{Clusters: clusters}, nil
+}
