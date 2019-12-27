@@ -158,6 +158,7 @@ func (rs *RESTServer) GetChannel(r *http.Request, ps httprouter.Params) *RouteRe
 	}
 }
 
+// GetChannels returns a list of all configured channels for the provided cluster
 func (rs *RESTServer) GetChannels(r *http.Request, ps httprouter.Params) *RouteReply {
 	cluster := ps.ByName("cluster")
 
@@ -198,6 +199,7 @@ func (rs *RESTServer) SetMessage(r *http.Request, ps httprouter.Params) *RouteRe
 	return &RouteReply{Code: 200}
 }
 
+// SetChannelData saves all relevent data related to a given channel
 func (rs *RESTServer) SetChannelData(r *http.Request, ps httprouter.Params) *RouteReply {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -230,6 +232,8 @@ func wrapRoute(rh RouteHandler) httprouter.Handle {
 		setHeaders(w, r.Header)
 		var body []byte
 		var err error
+
+		// TODO: bad
 		if response.Error != nil {
 			body, err = json.Marshal(response.Error)
 		} else if response.ChannelData != nil {

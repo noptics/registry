@@ -16,4 +16,10 @@ type Store interface {
 	SaveChannelData(cluster, channel, message string, files []*registrygrpc.File) error
 	// GetChannels returns a list of channels the registry has data for
 	GetChannels(cluster string) ([]string, error)
+	// SaveCluster saves configuration data for a cluster
+	SaveCluster(cluster *registrygrpc.Cluster) (string, error)
+	// GetCluster returns the configuration data for a cluster
+	GetCluster(id string) (*registrygrpc.Cluster, error)
+	// GetClusters returns all cluster configurations
+	GetClusters() ([]*registrygrpc.Cluster, error)
 }
