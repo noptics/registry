@@ -117,15 +117,15 @@ func (rs *RESTServer) SaveFiles(r *http.Request, ps httprouter.Params) *RouteRep
 		sfr.Channel = ps.ByName("channel")
 	}
 
-	if len(sfr.Cluster) == 0 {
-		sfr.Cluster = ps.ByName("cluster")
+	if len(sfr.ClusterID) == 0 {
+		sfr.ClusterID = ps.ByName("cluster")
 	}
 
-	if len(sfr.Cluster) == 0 || len(sfr.Channel) == 0 {
+	if len(sfr.ClusterID) == 0 || len(sfr.Channel) == 0 {
 		return newReplyError("unable to save files", "invalid parameters provided", "must provide channel and cluster", 400)
 	}
 
-	err = rs.db.SaveFiles(sfr.GetCluster(), sfr.GetChannel(), sfr.GetFiles())
+	err = rs.db.SaveFiles(sfr.GetClusterID(), sfr.GetChannel(), sfr.GetFiles())
 	if err != nil {
 		return newReplyError("unable to save files", "error storing data", err.Error(), 400)
 	}

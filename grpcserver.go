@@ -50,7 +50,7 @@ func (s *GRPCServer) Stop() {
 }
 
 func (s *GRPCServer) GetFiles(ctx context.Context, in *registrygrpc.GetFilesRequest) (*registrygrpc.GetFilesReply, error) {
-	_, f, err := s.db.GetChannelData(in.Cluster, in.Channel)
+	_, f, err := s.db.GetChannelData(in.ClusterID, in.Channel)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, err.Error())
 	}
@@ -59,7 +59,7 @@ func (s *GRPCServer) GetFiles(ctx context.Context, in *registrygrpc.GetFilesRequ
 }
 
 func (s *GRPCServer) SaveFiles(ctx context.Context, in *registrygrpc.SaveFilesRequest) (*registrygrpc.SaveFilesReply, error) {
-	err := s.db.SaveFiles(in.Cluster, in.Channel, in.Files)
+	err := s.db.SaveFiles(in.ClusterID, in.Channel, in.Files)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, err.Error())
 	}
@@ -68,7 +68,7 @@ func (s *GRPCServer) SaveFiles(ctx context.Context, in *registrygrpc.SaveFilesRe
 }
 
 func (s *GRPCServer) SetMessage(ctx context.Context, in *registrygrpc.SetMessageRequest) (*registrygrpc.SetMessageReply, error) {
-	err := s.db.SetChannelMessage(in.Cluster, in.Channel, in.Name)
+	err := s.db.SetChannelMessage(in.ClusterID, in.Channel, in.Name)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, err.Error())
 	}
@@ -77,7 +77,7 @@ func (s *GRPCServer) SetMessage(ctx context.Context, in *registrygrpc.SetMessage
 }
 
 func (s *GRPCServer) GetMessage(ctx context.Context, in *registrygrpc.GetMessageRequest) (*registrygrpc.GetMessageReply, error) {
-	m, _, err := s.db.GetChannelData(in.Cluster, in.Channel)
+	m, _, err := s.db.GetChannelData(in.ClusterID, in.Channel)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, err.Error())
 	}
@@ -86,17 +86,17 @@ func (s *GRPCServer) GetMessage(ctx context.Context, in *registrygrpc.GetMessage
 }
 
 func (s *GRPCServer) GetChannelData(ctx context.Context, in *registrygrpc.GetChannelDataRequest) (*registrygrpc.GetChannelDataReply, error) {
-	m, files, err := s.db.GetChannelData(in.Cluster, in.Channel)
+	m, files, err := s.db.GetChannelData(in.ClusterID, in.Channel)
 
 	if err != nil {
 		return nil, status.Error(codes.Unknown, err.Error())
 	}
 
-	return &registrygrpc.GetChannelDataReply{Cluster: in.Cluster, Channel: in.Channel, Files: files, Message: m}, nil
+	return &registrygrpc.GetChannelDataReply{ClusterID: in.ClusterID, Channel: in.Channel, Files: files, Message: m}, nil
 }
 
 func (s *GRPCServer) SetChannelData(ctx context.Context, in *registrygrpc.SetChannelDataRequest) (*registrygrpc.SetChannelDataReply, error) {
-	err := s.db.SaveChannelData(in.Cluster, in.Channel, in.Message, in.Files)
+	err := s.db.SaveChannelData(in.ClusterID, in.Channel, in.Message, in.Files)
 
 	if err != nil {
 		return nil, status.Error(codes.Unknown, err.Error())

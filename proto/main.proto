@@ -8,7 +8,7 @@ message File {
 }
 
 message SaveFilesRequest {
-    string cluster = 1;
+    string clusterID = 1;
     string channel = 2;
     repeated File files = 3;
 }
@@ -17,7 +17,7 @@ message SaveFilesReply {
 }
 
 message GetFilesRequest {
-    string cluster = 1;
+    string clusterID = 1;
     string channel = 2;
 }
 
@@ -26,7 +26,7 @@ message GetFilesReply {
 }
 
 message SetMessageRequest {
-    string cluster = 1;
+    string clusterID = 1;
     string channel = 2;
     string name = 3;
 }
@@ -35,7 +35,7 @@ message SetMessageReply {
 }
 
 message GetMessageRequest {
-    string cluster = 1;
+    string clusterID = 1;
     string channel = 2;
 }
 
@@ -44,19 +44,19 @@ message GetMessageReply {
 }
 
 message GetChannelDataRequest {
-    string cluster = 1;
+    string clusterID = 1;
     string channel = 2;
 }
 
 message GetChannelDataReply {
-    string cluster = 1;
+    string clusterID = 1;
     string channel = 3;
     string message = 4;
     repeated File files = 5;
 }
 
 message SetChannelDataRequest {
-    string cluster = 1;
+    string clusterID = 1;
     string channel = 3;
     string message = 4;
     repeated File files = 5;
